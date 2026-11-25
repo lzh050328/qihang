@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lzh.mapper.BusinessMapper">
+    <select id="findByPage" resultType="com.lzh.pojo.Business">
+        select business.* ,user.name as assignName from business
+        left join user on business.user_id = user.id
+        <where>
+            <if test="businessDto.businessId != null">
+                 business.id = #{businessDto.businessId}
+            </if>
+            <if test="businessDto.name != null and businessDto.name != ''">
+                and business.name like concat('%', #{businessDto.name}, '%')
+            </if>
+            <if test="businessDto.phone != null and businessDto.phone != ''">
+                and business.phone  like concat('%', #{businessDto.phone}, '%')
+            </if>
+            <if test="businessDto.status != null">
+                and business.status = #{businessDto.status}
+            </if>
+            <if test="businessDto.subject != null">
+                and business.subject = #{businessDto.subject}
+            </if>
+            <if test="businessDto.assignName != null and businessDto.assignName != ''">
+                and user.name  like concat('%', #{businessDto.assignName}, '%')
+            </if>
+
+        </where>
+        order by business.id desc
+    </select>
+    <resultMap id="business_track_records_rm" type="com.lzh.pojo.Business" autoMapping="true">
+        <id property="id" column="id"/>
+        <collection property="trackRecords" ofType="com.lzh.pojo.BusinessTrackRecord"
+                    columnPrefix="ctr_" autoMapping="true">
+            <id property="id" column="id"/>
+        </collection>
+    </resultMap>
+    <select id="findById" resultMap="business_track_records_rm">
+        select business.*,
+               ctr.id           as ctr_id,
+               ctr.user_id      as ctr_user_id,
+               ctr.business_id  as ctr_business_id,
+               ctr.track_status as ctr_track_status,
+               ctr.key_items    as ctr_key_items,
+               ctr.next_time    as ctr_next_time,
+               ctr.record       as ctr_record,
+               ctr.create_time  as ctr_create_time,
+               u.name           as ctr_assign_name
+        from business
+                 left join business_track_record ctr on business.id = ctr.business_id
+                 left join user u on ctr.user_id = u.id
+        where business.id = #{id}
+        order by ctr.create_time desc
+    </select>
+
+
+</mapper>

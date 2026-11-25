@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lzh.mapper.ClueMapper">
+    <resultMap id="clue_clue_track_records_rm" type="com.lzh.pojo.Clue" autoMapping="true">
+        <id property="id" column="id"></id>
+        <collection property="trackRecords" ofType="com.lzh.pojo.ClueTrackRecord"
+                    columnPrefix="ctr_" autoMapping="true">
+            <id property="id" column="id"></id>
+        </collection>
+    </resultMap>
+    <!-- 改：原来 select clue.*, ctr.* 会让跟进记录的 id/user_id/subject/level/next_time/create_time
+         覆盖掉线索自己的同名列，详情里 userId 永远是 null（进而导致跟进时 user_id 落库失败），
+         这里只取别名，不再整表塞 ctr.* -->
+    <select id="findById" resultMap="clue_clue_track_records_rm">
+        select
+            clue.*,
+            ctr.id           as ctr_id,
+            ctr.clue_id      as ctr_clue_id,
+            ctr.user_id      as ctr_user_id,
+            ctr.subject      as ctr_subject,
+            ctr.level        as ctr_level,
+            ctr.record       as ctr_record,
+            ctr.next_time    as ctr_next_time,
+            ctr.type         as ctr_type,
+            ctr.false_reason as ctr_false_reason,
+            ctr.create_time  as ctr_create_time,
+            u.name           as ctr_assign_name,
+            owner.name       as assignName
+        from clue
+        left outer join clue_track_record ctr on clue.id = ctr.clue_id
+        left outer join user owner on clue.user_id = owner.id
+        left outer join user u on ctr.user_id = u.id
+        where clue.id = #{id}
+        order by ctr.create_time desc
+    </select>
+
+    <select id="findByPage" resultType="com.lzh.pojo.Clue">
+        select clue.*,user.name as assignName from clue
+        left join user on clue.user_Id = user.id
+        <where>
+            <if test="clueDto.clueId != null">
+                clue.id = #{clueDto.clueId}
+            </if>
+            <if test="clueDto.phone != null and clueDto.phone != ''">
+                and clue.phone like CONCAT('%', #{clueDto.phone}, '%')
+            </if>
+            <if test="clueDto.status != null">
+                and clue.status = #{clueDto.status}
+            </if>
+            <if test="clueDto.channel != null">
+                and clue.channel = #{clueDto.channel}
+            </if>
+            <if test="clueDto.assignName != null and clueDto.assignName != ''">
+                <!-- 改：assignName 只是上面 select 里的别名，WHERE 中不能用别名，必须写真实的表.列 -->
+                and user.name like CONCAT('%', #{clueDto.assignName}, '%')
+            </if>
+        </where>
+        <!-- 加：分页必须有稳定排序，否则翻页时可能出现重复或漏数据 -->
+        order by clue.id desc
+    </select>
+    <select id="findPoll" resultType="com.lzh.pojo.Clue">
+        select clue.*,activity.name as activityName
+        from clue
+        left join activity on clue.activity_id = activity.id
+        <where>
+            <!-- 加：线索池只放"还没分配给任何人"的线索（原来无条件，已分配/已转商机的也会被查出来） -->
+            and clue.user_id is null
+            <!-- 加：下面都是可选筛选，传了才拼条件（<where> 会自动去掉开头的 and） -->
+            <!-- 加：status=0 是前端"全部"tab 的默认值，库里没有 0 这个状态，当"不筛选"处理 -->
+            <if test="clue.status != null and clue.status != 0">
+                and clue.status = #{clue.status}
+            </if>
+            <if test="clue.phone != null and clue.phone != ''">
+                and clue.phone like concat('%', #{clue.phone}, '%')
+            </if>
+            <if test="clue.channel != null">
+                and clue.channel = #{clue.channel}
+            </if>
+        </where>
+        <!-- 加：分页必须有稳定排序，否则翻页可能重复或漏数据 -->
+        order by clue.id desc
+    </select>
+</mapper>

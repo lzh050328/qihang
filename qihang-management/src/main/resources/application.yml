@@ -1,0 +1,27 @@
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/${MYSQL_DB:qk}?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
+    username: ${MYSQL_USERNAME:root}
+    password: ${MYSQL_PASSWORD:}
+mybatis-plus:
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    map-underscore-to-camel-case: true
+    #开启驼峰命名 自动映射，下划线转驼峰命名
+
+  global-config:
+    db-config:
+      table-prefix:
+      #自动添加表前缀
+      id-type: auto
+      #id类型自增
+# 配置MyBatis-Plus
+ali:
+  oss:
+    endpoint: ${OSS_ENDPOINT:https://oss-cn-beijing.aliyuncs.com}
+    bucketName: ${OSS_BUCKET_NAME:}
+    region: ${OSS_REGION:cn-beijing}
+jwt:
+  SECRET_KEY: ${JWT_SECRET:change-me-in-production}
+  EXPIRATION_TIME: 3600000 #1小时（JwtUtil 里再 *24 => 实际 24 小时）

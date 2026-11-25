@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lzh.mapper.CustomerMapper">
+    <select id="findByPage" resultType="com.lzh.pojo.Customer">
+        select customer.*, course.name as courseName from customer
+        left join course on customer.course_id = course.id
+        <where>
+            <if test="customerDto.phone != null and customerDto.phone != ''">
+                and customer.phone like concat('%', #{customerDto.phone}, '%')
+            </if>
+            <if test="customerDto.name != null and customerDto.name != ''">
+                and customer.name like concat('%', #{customerDto.name}, '%')
+            </if>
+            <if test="customerDto.channel != null">
+                and customer.channel = #{customerDto.channel}
+            </if>
+            <if test="customerDto.subject != null">
+                and customer.subject = #{customerDto.subject}
+            </if>
+        </where>
+        order by customer.id desc
+    </select>
+</mapper>
